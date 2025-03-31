@@ -241,7 +241,7 @@ const CheckoutPage = () => {
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{item.name}</p>
                           <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                          <p className="text-sm text-gray-600">${item.price.toFixed(2)}</p>
+                          <p className="text-sm text-gray-600">₹{item.price.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -254,20 +254,20 @@ const CheckoutPage = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Subtotal</span>
-                      <span className="font-medium">${orderDetails?.subtotal?.toFixed(2)}</span>
+                      <span className="font-medium">₹{orderDetails?.subtotal?.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Shipping</span>
-                      <span className="font-medium">${orderDetails?.shipping?.toFixed(2)}</span>
+                      <span className="font-medium">₹{orderDetails?.shipping?.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tax</span>
-                      <span className="font-medium">${orderDetails?.tax?.toFixed(2)}</span>
+                      <span className="font-medium">₹{orderDetails?.tax?.toFixed(2)}</span>
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between">
                         <span className="font-semibold text-gray-900">Total</span>
-                        <span className="font-semibold text-gray-900">${orderDetails?.total?.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-900">₹{orderDetails?.total?.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
