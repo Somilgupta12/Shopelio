@@ -252,7 +252,7 @@ const NavBar = () => {
                         Login
                       </Link>
                       <Link 
-                        href="/register" 
+                        href="/signup" 
                         className="block px-4 py-2 hover:bg-gray-100 transition-colors"
                         onClick={() => setIsAccountMenuOpen(false)}
                       >
