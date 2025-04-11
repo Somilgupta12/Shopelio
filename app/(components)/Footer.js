@@ -10,8 +10,6 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-4">About Us</h3>
             <ul className="space-y-2">
               <li><Link href="/about" className="hover:text-blue-400">About Shopelio</Link></li>
-              <li><Link href="/careers" className="hover:text-blue-400">Careers</Link></li>
-              <li><Link href="/press" className="hover:text-blue-400">Press</Link></li>
             </ul>
           </div>
           
