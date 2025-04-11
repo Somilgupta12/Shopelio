@@ -157,9 +157,9 @@ const PrivacyPolicyPage = () => {
               If you have any questions about this Privacy Policy, please contact us at:
             </p>
             <div className="mt-4">
-              <p>Email: privacy@shopelio.com</p>
-              <p>Phone: 1-800-SHOPELIO</p>
-              <p>Address: 123 Commerce Street, Tech City, TC 12345, India</p>
+              <p>Email: shipping@shopelio.com</p>
+              <p>Phone: +91 9876543210</p>
+              <p>Address: Sadar Bazar, New Delhi, Delhi, India</p>
             </div>
           </section>
         </div>

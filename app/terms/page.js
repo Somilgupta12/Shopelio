@@ -150,7 +150,7 @@ const TermsOfServicePage = () => {
           <section>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">12. Contact Information</h2>
             <p>
-              Questions or comments about the Services or these Terms may be directed to our customer service department by emailing support@shopelio.com or by calling us at 1-800-SHOPELIO.
+              Questions or comments about the Services or these Terms may be directed to our customer service department by emailing support@shopelio.com or by calling us at +91 9876543210.
             </p>
           </section>
         </div>

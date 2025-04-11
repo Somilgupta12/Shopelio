@@ -77,11 +77,16 @@ const ShippingInformationPage = () => {
               For international shipping, we currently serve the following regions:
             </p>
             <ul className="list-disc pl-6 mb-4">
-              <li>United States and Canada</li>
-              <li>European Union</li>
-              <li>United Kingdom</li>
-              <li>Australia and New Zealand</li>
-              <li>Singapore, Malaysia, and UAE</li>
+              <li>Mumbai, Maharashtra</li>
+              <li>New Delhi, Delhi</li>
+              <li>Kerala</li>
+              <li>Madhya Pradesh</li>
+              <li>Gujarat</li>
+              <li>Rajasthan</li>
+              <li>Haryana</li>
+              <li>Punjab</li>
+              <li>Uttar Pradesh</li>
+              <li>Uttarakhand</li>
             </ul>
             <p>
               International shipping rates and delivery times vary based on destination and package weight. These details will be calculated at checkout.
@@ -170,8 +175,8 @@ const ShippingInformationPage = () => {
             </p>
             <div className="mt-4">
               <p>Email: shipping@shopelio.com</p>
-              <p>Phone: 1-800-SHOPELIO</p>
-              <p>Address: 123 Commerce Street, Tech City, TC 12345, India</p>
+              <p>Phone: +91 9876543210</p>
+              <p>Address: Sadar Bazar, New Delhi, Delhi, India</p>
             </div>
           </section>
         </div>
