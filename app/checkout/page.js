@@ -28,8 +28,10 @@ const CheckoutPage = () => {
     cardNumber: '',
     expiryDate: '',
     cvv: '',
-    paymentMethod: '',
-    notes: ''
+    paymentMethod: 'credit_card',
+    upiId: '',
+    notes: '',
+    isCashOnDelivery: false
   });
 
   const [errors, setErrors] = useState({});
@@ -59,10 +61,33 @@ const CheckoutPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Special handling for payment method
+    if (name === 'paymentMethod') {
+      if (value === 'cod') {
+        setFormData(prev => ({
+          ...prev,
+          paymentMethod: 'credit_card', // Use valid enum value
+          isCashOnDelivery: true, // Set flag
+          // Clear card fields when switching to COD
+          cardName: '',
+          cardNumber: '',
+          expiryDate: '',
+          cvv: ''
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          paymentMethod: value,
+          isCashOnDelivery: false
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
 
     // Clear error when field is edited
     if (errors[name]) {
@@ -89,22 +114,35 @@ const CheckoutPage = () => {
     if (!formData.state.trim()) newErrors.state = 'State is required';
     if (!formData.zipCode.trim()) newErrors.zipCode = 'ZIP code is required';
     
-    // Payment validation
-    if (!formData.cardName.trim()) newErrors.cardName = 'Name on card is required';
-    if (!formData.cardNumber.trim()) {
-      newErrors.cardNumber = 'Card number is required';
-    } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
-      newErrors.cardNumber = 'Card number must be 16 digits';
+    // Payment validation based on payment method
+    if (!formData.paymentMethod) {
+      newErrors.paymentMethod = 'Please select a payment method';
     }
-    if (!formData.expiryDate.trim()) {
-      newErrors.expiryDate = 'Expiry date is required';
-    } else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.expiryDate)) {
-      newErrors.expiryDate = 'Expiry date must be in MM/YY format';
-    }
-    if (!formData.cvv.trim()) {
-      newErrors.cvv = 'CVV is required';
-    } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-      newErrors.cvv = 'CVV must be 3 or 4 digits';
+    
+    // Skip card validation if Cash on Delivery is selected
+    if (formData.paymentMethod === 'credit_card' && !formData.isCashOnDelivery) {
+      if (!formData.cardName.trim()) newErrors.cardName = 'Name on card is required';
+      if (!formData.cardNumber.trim()) {
+        newErrors.cardNumber = 'Card number is required';
+      } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
+        newErrors.cardNumber = 'Card number must be 16 digits';
+      }
+      if (!formData.expiryDate.trim()) {
+        newErrors.expiryDate = 'Expiry date is required';
+      } else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.expiryDate)) {
+        newErrors.expiryDate = 'Expiry date must be in MM/YY format';
+      }
+      if (!formData.cvv.trim()) {
+        newErrors.cvv = 'CVV is required';
+      } else if (!/^\d{3,4}$/.test(formData.cvv)) {
+        newErrors.cvv = 'CVV must be 3 or 4 digits';
+      }
+    } else if (formData.paymentMethod === 'upi') {
+      if (!formData.upiId.trim()) {
+        newErrors.upiId = 'UPI ID is required';
+      } else if (!/^[\w\d.-]+@[\w\d.-]+$/.test(formData.upiId)) {
+        newErrors.upiId = 'Please enter a valid UPI ID';
+      }
     }
     
     setErrors(newErrors);
@@ -113,6 +151,27 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Adjust form data before validation if needed
+    let formDataToValidate = formData;
+    
+    // For Cash on Delivery, we don't need to validate card fields
+    if (formData.isCashOnDelivery) {
+      // We've already cleared these fields in the handleChange function
+      // Just making sure before validation
+      formDataToValidate = {
+        ...formData,
+        cardName: '',
+        cardNumber: '',
+        expiryDate: '',
+        cvv: ''
+      };
+    }
+    
+    // Set the adjusted data to state to ensure consistent UI
+    if (formData.isCashOnDelivery) {
+      setFormData(formDataToValidate);
+    }
     
     if (!validateForm()) {
       toast.error('Please fix the errors in the form');
@@ -148,14 +207,15 @@ const CheckoutPage = () => {
           zipCode: formData.zipCode,
           country: formData.country
         },
-        paymentMethod: 'credit_card',
+        paymentMethod: formData.paymentMethod,
         paymentStatus: 'pending',
         orderStatus: 'processing',
         subtotal: subtotal,
         shipping: shipping,
         tax: tax,
         total: total,
-        notes: formData.notes || ''
+        notes: formData.notes || '',
+        isCashOnDelivery: formData.isCashOnDelivery
       };
 
       console.log('Creating order with data:', orderData);
@@ -214,6 +274,17 @@ const CheckoutPage = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-600">Order ID</p>
                   <p className="text-lg font-semibold text-gray-900">{orderId}</p>
+                </div>
+
+                {/* Payment Method */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method</h3>
+                  <p className="text-gray-600">
+                    {orderDetails?.paymentMethod === 'credit_card' && !orderDetails?.isCashOnDelivery && 'Credit/Debit Card'}
+                    {orderDetails?.paymentMethod === 'upi' && 'UPI Payment'}
+                    {(orderDetails?.isCashOnDelivery || 
+                     (formData.isCashOnDelivery)) && 'Cash on Delivery'}
+                  </p>
                 </div>
 
                 {/* Shipping Address */}
@@ -456,67 +527,164 @@ const CheckoutPage = () => {
                   <CreditCard className="h-5 w-5 mr-2 text-primary-600" />
                   Payment Information
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Name on Card
-                    </label>
-                    <input
-                      type="text"
-                      id="cardName"
-                      name="cardName"
-                      value={formData.cardName}
-                      onChange={handleChange}
-                      className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cardName ? 'border-red-500' : ''}`}
-                    />
-                    {errors.cardName && <p className="mt-1 text-sm text-red-600">{errors.cardName}</p>}
+                
+                {/* Payment Method Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Payment Method
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Credit Card Option */}
+                    <div 
+                      className={`border rounded-lg p-4 flex items-center cursor-pointer ${formData.paymentMethod === 'credit_card' && !formData.isCashOnDelivery ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}`}
+                      onClick={() => handleChange({ target: { name: 'paymentMethod', value: 'credit_card' } })}
+                    >
+                      <input
+                        type="radio"
+                        id="credit_card"
+                        name="paymentMethod"
+                        checked={formData.paymentMethod === 'credit_card' && !formData.isCashOnDelivery}
+                        onChange={() => {}}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      />
+                      <label htmlFor="credit_card" className="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+                        Credit/Debit Card
+                      </label>
+                    </div>
+                    
+                    {/* UPI Option */}
+                    <div 
+                      className={`border rounded-lg p-4 flex items-center cursor-pointer ${formData.paymentMethod === 'upi' ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}`}
+                      onClick={() => handleChange({ target: { name: 'paymentMethod', value: 'upi' } })}
+                    >
+                      <input
+                        type="radio"
+                        id="upi"
+                        name="paymentMethod"
+                        checked={formData.paymentMethod === 'upi'}
+                        onChange={() => {}}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      />
+                      <label htmlFor="upi" className="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+                        UPI
+                      </label>
+                    </div>
+                    
+                    {/* Cash on Delivery Option */}
+                    <div 
+                      className={`border rounded-lg p-4 flex items-center cursor-pointer ${formData.isCashOnDelivery ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}`}
+                      onClick={() => handleChange({ target: { name: 'paymentMethod', value: 'cod' } })}
+                    >
+                      <input
+                        type="radio"
+                        id="cod"
+                        name="paymentMethod"
+                        checked={formData.isCashOnDelivery}
+                        onChange={() => {}}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      />
+                      <label htmlFor="cod" className="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+                        Cash on Delivery
+                      </label>
+                    </div>
                   </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      id="cardNumber"
-                      name="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={handleChange}
-                      placeholder="XXXX XXXX XXXX XXXX"
-                      className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cardNumber ? 'border-red-500' : ''}`}
-                    />
-                    {errors.cardNumber && <p className="mt-1 text-sm text-red-600">{errors.cardNumber}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Expiry Date
-                    </label>
-                    <input
-                      type="text"
-                      id="expiryDate"
-                      name="expiryDate"
-                      value={formData.expiryDate}
-                      onChange={handleChange}
-                      placeholder="MM/YY"
-                      className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.expiryDate ? 'border-red-500' : ''}`}
-                    />
-                    {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      id="cvv"
-                      name="cvv"
-                      value={formData.cvv}
-                      onChange={handleChange}
-                      placeholder="XXX"
-                      className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cvv ? 'border-red-500' : ''}`}
-                    />
-                    {errors.cvv && <p className="mt-1 text-sm text-red-600">{errors.cvv}</p>}
-                  </div>
+                  {errors.paymentMethod && (
+                    <p className="mt-2 text-sm text-red-600">{errors.paymentMethod}</p>
+                  )}
                 </div>
+                
+                {/* Credit Card Form - Only display when credit card is selected */}
+                {formData.paymentMethod === 'credit_card' && !formData.isCashOnDelivery && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Name on Card
+                      </label>
+                      <input
+                        type="text"
+                        id="cardName"
+                        name="cardName"
+                        value={formData.cardName}
+                        onChange={handleChange}
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cardName ? 'border-red-500' : ''}`}
+                      />
+                      {errors.cardName && <p className="mt-1 text-sm text-red-600">{errors.cardName}</p>}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                        Card Number
+                      </label>
+                      <input
+                        type="text"
+                        id="cardNumber"
+                        name="cardNumber"
+                        value={formData.cardNumber}
+                        onChange={handleChange}
+                        placeholder="XXXX XXXX XXXX XXXX"
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cardNumber ? 'border-red-500' : ''}`}
+                      />
+                      {errors.cardNumber && <p className="mt-1 text-sm text-red-600">{errors.cardNumber}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="text"
+                        id="expiryDate"
+                        name="expiryDate"
+                        value={formData.expiryDate}
+                        onChange={handleChange}
+                        placeholder="MM/YY"
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.expiryDate ? 'border-red-500' : ''}`}
+                      />
+                      {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
+                        CVV
+                      </label>
+                      <input
+                        type="text"
+                        id="cvv"
+                        name="cvv"
+                        value={formData.cvv}
+                        onChange={handleChange}
+                        placeholder="XXX"
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.cvv ? 'border-red-500' : ''}`}
+                      />
+                      {errors.cvv && <p className="mt-1 text-sm text-red-600">{errors.cvv}</p>}
+                    </div>
+                  </div>
+                )}
+                
+                {/* UPI Form - Only display when UPI is selected */}
+                {formData.paymentMethod === 'upi' && (
+                  <div className="mt-4">
+                    <label htmlFor="upiId" className="block text-sm font-medium text-gray-700 mb-1">
+                      UPI ID
+                    </label>
+                    <input
+                      type="text"
+                      id="upiId"
+                      name="upiId"
+                      value={formData.upiId}
+                      onChange={handleChange}
+                      placeholder="example@upi"
+                      className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${errors.upiId ? 'border-red-500' : ''}`}
+                    />
+                    {errors.upiId && <p className="mt-1 text-sm text-red-600">{errors.upiId}</p>}
+                  </div>
+                )}
+                
+                {/* Cash on Delivery - No additional fields needed */}
+                {formData.isCashOnDelivery && (
+                  <div className="mt-4 p-4 bg-yellow-50 rounded-md">
+                    <p className="text-sm text-yellow-700">
+                      You will pay in cash at the time of delivery. Please keep the exact amount ready.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}

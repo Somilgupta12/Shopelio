@@ -71,6 +71,10 @@ const orderSchema = new mongoose.Schema({
     required: true,
     enum: ['credit_card', 'paypal', 'upi']
   },
+  isCashOnDelivery: {
+    type: Boolean,
+    default: false
+  },
   paymentStatus: {
     type: String,
     required: true,

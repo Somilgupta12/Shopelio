@@ -30,6 +30,7 @@ const serializeOrder = (order) => {
       country: order.shippingAddress.country
     },
     paymentMethod: order.paymentMethod,
+    isCashOnDelivery: order.isCashOnDelivery || false,
     paymentStatus: order.paymentStatus,
     orderStatus: order.orderStatus,
     subtotal: Number(order.subtotal),
